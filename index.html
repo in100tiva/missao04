@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Validação de Formulário - UI Design Final Polish</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+        }
+
+        .bg-noise {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.05;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+
+        .error-message {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transform: translateY(-5px);
+        }
+        .error-message.visible {
+            max-height: 24px;
+            opacity: 1;
+            margin-top: 0.5rem;
+            transform: translateY(0);
+        }
+
+        @keyframes enterUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-enter { animation: enterUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .animate-spin-slow { animation: spin 1s linear infinite; }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(-20px, 20px); }
+        }
+        .animate-float { animation: float 10s ease-in-out infinite; }
+        .animate-float-delayed { animation: float 12s ease-in-out infinite reverse; }
+
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        slate: {
+                            900: '#0f172a',
+                            800: '#1e293b',
+                            700: '#334155',
+                            600: '#475569',
+                            400: '#94a3b8',
+                            200: '#e2e8f0',
+                            100: '#f1f5f9',
+                        },
+                        cyan: {
+                            400: '#22d3ee',
+                            500: '#06b6d4',
+                            600: '#0891b2',
+                        },
+                        rose: { 500: '#f43f5e', 400: '#fb7185' },
+                        blue: { 500: '#3b82f6', 600: '#2563eb' }
+                    },
+                    backgroundImage: {
+                        'glass-gradient': 'linear-gradient(145deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.6) 100%)',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4 selection:bg-cyan-500/30 selection:text-cyan-200 overflow-hidden relative">
+
+    <div class="fixed inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-cyan-500/20 rounded-full blur-[100px] animate-float"></div>
+        <div class="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-blue-600/20 rounded-full blur-[120px] animate-float-delayed"></div>
+    </div>
+
+    <div class="bg-noise"></div>
+
+    <main class="w-full max-w-md relative z-10 
+                 bg-slate-800/40 backdrop-blur-xl 
+                 rounded-2xl shadow-2xl 
+                 border border-white/5 ring-1 ring-white/10
+                 min-h-[500px] flex flex-col justify-center
+                 transition-all duration-500 group/card">
+        
+        <div id="skeleton-loader" class="w-full absolute inset-0 p-8 flex flex-col justify-center space-y-8 z-30 rounded-2xl">
+            <div class="space-y-4 text-center animate-pulse">
+                <div class="h-8 bg-slate-700/50 rounded-lg w-3/4 mx-auto"></div>
+                <div class="h-3 bg-slate-700/30 rounded w-full"></div>
+                <div class="h-3 bg-slate-700/30 rounded w-5/6 mx-auto"></div>
+            </div>
+            <div class="space-y-6 animate-pulse">
+                <div class="space-y-2">
+                    <div class="h-3 bg-slate-700/50 rounded w-1/4"></div>
+                    <div class="h-12 bg-slate-700/30 rounded-xl w-full"></div>
+                </div>
+                <div class="space-y-2">
+                    <div class="h-3 bg-slate-700/50 rounded w-1/4"></div>
+                    <div class="h-12 bg-slate-700/30 rounded-xl w-full"></div>
+                </div>
+            </div>
+            <div class="h-14 bg-slate-700/50 rounded-xl w-full animate-pulse mt-4"></div>
+        </div>
+
+        <div id="real-content" class="hidden opacity-0 transition-opacity duration-700 p-8">
+            
+            <div class="absolute top-0 right-0 p-4">
+                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 backdrop-blur-md cursor-help transition-colors hover:bg-blue-500/20 shadow-lg shadow-blue-500/5" title="Tempo médio de resposta da equipe">
+                    <div class="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></div>
+                    <span class="text-[10px] font-bold uppercase tracking-wide text-blue-400">Resposta em 24h</span>
+                </div>
+            </div>
+
+            <div class="mb-10 mt-2 text-center sm:text-left">
+                <h1 class="text-3xl font-bold text-slate-100 mb-2 tracking-tight drop-shadow-sm">Fale Conosco</h1>
+                <p class="text-slate-400 text-sm leading-relaxed">
+                    Tem alguma dúvida? Preencha os dados e nosso time entrará em contato.
+                </p>
+            </div>
+
+            <form id="contactForm" class="flex flex-col gap-6" novalidate>
+                
+                <div class="input-group group relative">
+                    <label for="name" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 transition-all duration-300 group-focus-within:text-cyan-400 group-focus-within:translate-x-1">
+                        Nome Completo
+                    </label>
+                    <div class="relative">
+                        <input 
+                            type="text" 
+                            id="name" 
+                            class="w-full bg-slate-900/50 border border-slate-700/50 text-slate-200 text-sm rounded-xl px-4 py-3.5 pr-10 outline-none 
+                                   hover:border-slate-600 hover:bg-slate-900/70
+                                   focus:border-cyan-400 focus:bg-slate-900/90 focus:shadow-[0_0_0_4px_rgba(34,211,238,0.1)]
+                                   transition-all duration-300 placeholder-slate-600 font-medium backdrop-blur-sm"
+                            placeholder="Ex: João Silva"
+                        >
+                        <button type="button" id="clear-name" class="absolute right-3 top-3.5 text-slate-500 hover:text-slate-300 hidden transition-colors" tabindex="-1">
+                             <i class="ph-bold ph-x-circle text-lg"></i>
+                        </button>
+                        <div class="absolute right-3 top-3.5 text-rose-500 hidden transition-transform duration-300" id="icon-error-name">
+                            <i class="ph-bold ph-warning-circle text-lg animate-bounce"></i>
+                        </div>
+                    </div>
+                    <p class="text-rose-500 text-xs error-message font-medium" id="error-name">Por favor, informe seu nome.</p>
+                </div>
+
+                <div class="input-group group relative">
+                    <label for="email" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 transition-all duration-300 group-focus-within:text-cyan-400 group-focus-within:translate-x-1">
+                        E-mail Corporativo
+                    </label>
+                    <div class="relative">
+                        <input 
+                            type="email" 
+                            id="email" 
+                            class="w-full bg-slate-900/50 border border-slate-700/50 text-slate-200 text-sm rounded-xl px-4 py-3.5 pr-10 outline-none 
+                                   hover:border-slate-600 hover:bg-slate-900/70
+                                   focus:border-cyan-400 focus:bg-slate-900/90 focus:shadow-[0_0_0_4px_rgba(34,211,238,0.1)]
+                                   transition-all duration-300 placeholder-slate-600 font-medium backdrop-blur-sm"
+                            placeholder="nome@empresa.com"
+                        >
+                        <button type="button" id="clear-email" class="absolute right-3 top-3.5 text-slate-500 hover:text-slate-300 hidden transition-colors" tabindex="-1">
+                            <i class="ph-bold ph-x-circle text-lg"></i>
+                       </button>
+                        <div class="absolute right-3 top-3.5 text-rose-500 hidden" id="icon-error-email">
+                            <i class="ph-bold ph-warning-circle text-lg animate-bounce"></i>
+                        </div>
+                    </div>
+                    <p class="text-rose-500 text-xs error-message font-medium" id="error-email">Precisamos de um e-mail válido.</p>
+                </div>
+
+                <button 
+                    type="submit" 
+                    id="submitBtn"
+                    class="group relative w-full bg-gradient-to-r from-cyan-400 to-cyan-500 hover:to-cyan-400 text-slate-900 font-bold py-4 px-4 rounded-xl 
+                           transition-all duration-300 transform active:scale-95 
+                           shadow-[0_4px_14px_0_rgba(34,211,238,0.39)] hover:shadow-[0_6px_20px_rgba(34,211,238,0.23)] hover:-translate-y-0.5
+                           mt-4 flex items-center justify-center gap-2 overflow-hidden ring-offset-2 ring-offset-slate-900 focus:ring-2 focus:ring-cyan-400"
+                >
+                    <div class="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-in-out skew-x-12"></div>
+                    <span id="btnText" class="relative z-10 flex items-center gap-2">
+                        Enviar Mensagem <i class="ph-bold ph-paper-plane-right text-lg transition-transform group-hover:translate-x-1 group-hover:-translate-y-1"></i>
+                    </span>
+                    <span id="btnLoading" class="hidden relative z-10">
+                        <i class="ph-bold ph-spinner animate-spin-slow text-xl"></i>
+                    </span>
+                </button>
+            </form>
+        </div>
+
+        <div id="successMessage" class="hidden h-full absolute inset-0 bg-slate-900/90 backdrop-blur-md z-40 flex flex-col items-center justify-center text-center p-8 animate-enter rounded-2xl">
+            <div class="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-full text-emerald-400 mb-4 animate-[bounce_1s_infinite] shadow-[0_0_30px_rgba(16,185,129,0.2)]">
+                <i class="ph-fill ph-check-circle text-4xl"></i>
+            </div>
+            <h3 class="text-emerald-400 font-bold text-2xl mb-2 drop-shadow-md">Mensagem enviada!</h3>
+            <p class="text-slate-300 text-sm max-w-[250px] mx-auto mb-8 font-medium">Agradecemos o contato. Você receberá uma resposta em seu e-mail em breve.</p>
+            <button onclick="location.reload()" class="text-sm font-bold bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white py-3 px-6 rounded-xl transition-all active:scale-95 hover:shadow-lg">
+                Voltar ao formulário
+            </button>
+        </div>
+
+    </main>
+
+    <script>
+        const skeletonLoader = document.getElementById('skeleton-loader');
+        const realContent = document.getElementById('real-content');
+        const form = document.getElementById('contactForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const btnText = document.getElementById('btnText');
+        const btnLoading = document.getElementById('btnLoading');
+        const successMessage = document.getElementById('successMessage');
+
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                skeletonLoader.classList.add('opacity-0', 'transition-opacity', 'duration-500');
+                setTimeout(() => {
+                    skeletonLoader.style.display = 'none';
+                    realContent.classList.remove('hidden');
+                    requestAnimationFrame(() => {
+                        realContent.classList.remove('opacity-0');
+                        realContent.classList.add('animate-enter');
+                    });
+                }, 500);
+            }, 1200);
+        });
+
+        const toggleError = (inputId, show) => {
+            const input = document.getElementById(inputId);
+            const errorMsg = document.getElementById(`error-${inputId}`);
+            const errorIcon = document.getElementById(`icon-error-${inputId}`);
+            const clearBtn = document.getElementById(`clear-${inputId}`);
+            
+            if (show) {
+                input.classList.remove('border-slate-700/50', 'focus:border-cyan-400', 'focus:shadow-[0_0_0_4px_rgba(34,211,238,0.1)]');
+                input.classList.add('border-rose-500', 'focus:border-rose-500', 'bg-rose-500/10', 'focus:shadow-[0_0_0_4px_rgba(244,63,94,0.1)]');
+                errorMsg.classList.add('visible');
+                errorIcon.classList.remove('hidden');
+                clearBtn.classList.add('hidden');
+                input.parentElement.classList.add('animate-[pulse_0.2s_ease-in-out]');
+                setTimeout(() => input.parentElement.classList.remove('animate-[pulse_0.2s_ease-in-out]'), 200);
+            } else {
+                input.classList.add('border-slate-700/50', 'focus:border-cyan-400', 'focus:shadow-[0_0_0_4px_rgba(34,211,238,0.1)]');
+                input.classList.remove('border-rose-500', 'focus:border-rose-500', 'bg-rose-500/10', 'focus:shadow-[0_0_0_4px_rgba(244,63,94,0.1)]');
+                errorMsg.classList.remove('visible');
+                errorIcon.classList.add('hidden');
+                if(input.value.length > 0) clearBtn.classList.remove('hidden');
+            }
+        };
+
+        ['name', 'email'].forEach(id => {
+            const input = document.getElementById(id);
+            const clearBtn = document.getElementById(`clear-${id}`);
+            input.addEventListener('input', () => {
+                toggleError(id, false);
+                if (input.value.length > 0) clearBtn.classList.remove('hidden');
+                else clearBtn.classList.add('hidden');
+            });
+            clearBtn.addEventListener('click', () => {
+                input.value = '';
+                input.focus();
+                clearBtn.classList.add('hidden');
+            });
+        });
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault(); 
+            let isValid = true;
+            const nameInput = document.getElementById('name');
+            if (!nameInput.value.trim()) { toggleError('name', true); isValid = false; }
+            const emailInput = document.getElementById('email');
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; 
+            if (!emailInput.value.trim() || !emailRegex.test(emailInput.value)) { toggleError('email', true); isValid = false; }
+
+            if (isValid) {
+                submitBtn.setAttribute('disabled', 'true');
+                btnText.classList.add('hidden');
+                btnLoading.classList.remove('hidden');
+                submitBtn.classList.add('cursor-not-allowed', 'opacity-80');
+                
+                setTimeout(() => {
+                    submitBtn.removeAttribute('disabled');
+                    btnText.classList.remove('hidden');
+                    btnLoading.classList.add('hidden');
+                    submitBtn.classList.remove('cursor-not-allowed', 'opacity-80');
+                    
+                    realContent.classList.add('opacity-0', 'pointer-events-none');
+                    setTimeout(() => { successMessage.classList.remove('hidden'); }, 300);
+                }, 1500); 
+            }
+        });
+    </script>
+</body>
+</html>
