@@ -1,3 +1,5 @@
+![Preview](img/preview.png)
+
 # missao04
 Missão do Dia: Validação Simples de Formulário
 a# 🎨 Validação de Formulário - UI Design Showcase
